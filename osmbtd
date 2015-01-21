@@ -1,0 +1,49 @@
+#! /usr/bin/env sh
+#
+# osmbtd - OpenStreetMap Batch Traces Download
+#
+# Author: Julien Sagot
+# License: MIT
+# Version: 0.1
+# Homepage: http://github.com/sagotch/osmbtd#README
+#
+# Usage: osmbtd <tag1> [ ... <tagN> ]
+#
+
+# _osmbtd tag start
+# Download every traces with a given tag.
+# Files are written on disk using the following scheme: ./$user/$gpxid.gpx
+#
+# $1: tag
+# $2: page number where to start.
+#     _osmbtd will call itself recursively incrementing this number
+#     until it fails. You probably want to start with `_osmbtd tag 1`.
+_osmbtd ()
+{
+    local OSMBASEURL='https://www.openstreetmap.org'
+    local tag="$1"
+    local page="$2"
+
+    echo "Fetching traces for '$tag' (page $page)"
+
+    local traces=$(curl -s "'$OSMBASEURL/traces/tag/$tag/page/$page'" \
+	| grep -E "/user/[^/]+/traces/[0-9]+" \
+	| sed -E 's%.*/user/([^/]+)/traces/([0-9]+).*%\1,\2%' \
+	| sort -u) ;
+
+    if [ x"$traces" != "x" ] ;
+    then
+	for e in $traces ; do
+	    local user=${e%,*}
+	    local gpxid=${e#*,}
+	    mkdir -p "$user"
+	    curl -s -o "./$user/$gpxid.gpx" "$OSMBASEURL/trace/$gpxid/data"
+	done
+	_osmbtd $tag $(( page + 1 ))
+    fi
+}
+
+while [ $# -gt 0 ] ; do
+    _osmbtd "$1" 1
+    shift
+done
