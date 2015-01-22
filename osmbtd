@@ -4,7 +4,7 @@
 #
 # Author: Julien Sagot
 # License: MIT
-# Version: 0.1
+# Version: 0.1.1
 # Homepage: http://github.com/sagotch/osmbtd#README
 #
 # Usage: osmbtd <tag1> [ ... <tagN> ]
@@ -26,9 +26,9 @@ _osmbtd ()
 
     echo "Fetching traces for '$tag' (page $page)"
 
-    local traces=$(curl -s "'$OSMBASEURL/traces/tag/$tag/page/$page'" \
+    local traces=$(curl -s "$OSMBASEURL/traces/tag/$tag/page/$page" \
 	| grep -E "/user/[^/]+/traces/[0-9]+" \
-	| sed -E 's%.*/user/([^/]+)/traces/([0-9]+).*%\1,\2%' \
+	| sed -E 's|.*/user/([^/]+)/traces/([0-9]+).*|\1,\2|' \
 	| sort -u) ;
 
     if [ x"$traces" != "x" ] ;
@@ -43,7 +43,9 @@ _osmbtd ()
     fi
 }
 
+
+# Call _osmbtd on each tag, with ' ' characters replaced by '%20'.
 while [ $# -gt 0 ] ; do
-    _osmbtd "$1" 1
+    _osmbtd $(echo "$1" | sed 's| |%20|g') 1
     shift
 done
