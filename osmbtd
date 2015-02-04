@@ -4,8 +4,8 @@
 #
 # Author: Julien Sagot
 # License: MIT
-# Version: 0.1.1
-# Homepage: http://github.com/sagotch/osmbtd#README
+# Version: 0.1.2
+# Homepage: http://github.com/sagotch/osmbtd.sh#README
 #
 # Usage: osmbtd <tag1> [ ... <tagN> ]
 #
@@ -20,16 +20,17 @@
 #     until it fails. You probably want to start with `_osmbtd tag 1`.
 _osmbtd ()
 {
+
     local OSMBASEURL='https://www.openstreetmap.org'
     local tag="$1"
     local page="$2"
 
     echo "Fetching traces for '$tag' (page $page)"
 
-    local traces=$(curl -s "$OSMBASEURL/traces/tag/$tag/page/$page" \
+    local traces="$(curl -s "$OSMBASEURL/traces/tag/$tag/page/$page" \
 	| grep -E "/user/[^/]+/traces/[0-9]+" \
 	| sed -E 's|.*/user/([^/]+)/traces/([0-9]+).*|\1,\2|' \
-	| sort -u) ;
+	| sort -u)" ;
 
     if [ x"$traces" != "x" ] ;
     then
