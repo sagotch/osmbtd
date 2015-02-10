@@ -4,7 +4,7 @@
 #
 # Author: Julien Sagot
 # License: MIT
-# Version: 0.1.2
+# Version: 0.2.0
 # Homepage: http://github.com/sagotch/osmbtd.sh#README
 #
 # Usage: osmbtd <tag1> [ ... <tagN> ]
@@ -37,8 +37,31 @@ _osmbtd ()
 	for e in $traces ; do
 	    local user=${e%,*}
 	    local gpxid=${e#*,}
+	    local body="$(mktemp)"
+	    local head="$(mktemp)"
+	    local output="./$user/$gpxid.gpx"
+
 	    mkdir -p "$user"
-	    curl -s -o "./$user/$gpxid.gpx" "$OSMBASEURL/trace/$gpxid/data"
+
+	    curl -s -o "$body" -D "$head" "$OSMBASEURL/trace/$gpxid/data"
+
+	    # FIXME: Seems to have strange leading/trailing control character
+	    local type="$(grep 'Content-Type:' "$head" | cut -d\  -f2)"
+
+	    case "$type" in
+		*application/x-bzip2*)
+		    bzip2 -cds "$body" > "$output"  ;;
+		*application/x-gzip*)
+		    gzip -cdq "$body" > "$output" ;;
+		*application/gpx+xml*)
+		    cp "$body" "$output" ;;
+		*)
+		    echo "Content-Type $type is not supported."
+		    echo "Please contact osmbtd maintener." ;;
+            esac
+
+	    rm "$head" "$body"
+
 	done
 	_osmbtd $tag $(( page + 1 ))
     fi
