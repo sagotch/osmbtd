@@ -28,42 +28,42 @@ _osmbtd ()
     echo "Fetching traces for '$tag' (page $page)"
 
     local traces="$(curl -s "$OSMBASEURL/traces/tag/$tag/page/$page" \
-	| grep -E "/user/[^/]+/traces/[0-9]+" \
-	| sed -E 's|.*/user/([^/]+)/traces/([0-9]+).*|\1,\2|' \
-	| sort -u)" ;
+        | grep -E "/user/[^/]+/traces/[0-9]+" \
+        | sed -E 's|.*/user/([^/]+)/traces/([0-9]+).*|\1,\2|' \
+        | sort -u)" ;
 
     if [ x"$traces" != "x" ] ;
     then
-	for e in $traces ; do
-	    local user=${e%,*}
-	    local gpxid=${e#*,}
-	    local body="$(mktemp)"
-	    local head="$(mktemp)"
-	    local output="./$user/$gpxid.gpx"
+        for e in $traces ; do
+            local user=${e%,*}
+            local gpxid=${e#*,}
+            local body="$(mktemp)"
+            local head="$(mktemp)"
+            local output="./$user/$gpxid.gpx"
 
-	    mkdir -p "$user"
+            mkdir -p "$user"
 
-	    curl -s -o "$body" -D "$head" "$OSMBASEURL/trace/$gpxid/data"
+            curl -s -o "$body" -D "$head" "$OSMBASEURL/trace/$gpxid/data"
 
-	    # FIXME: Seems to have strange leading/trailing control character
-	    local type="$(grep 'Content-Type:' "$head" | cut -d\  -f2)"
+            # FIXME: Seems to have strange leading/trailing control character
+            local type="$(grep 'Content-Type:' "$head" | cut -d\  -f2)"
 
-	    case "$type" in
-		*application/x-bzip2*)
-		    bzip2 -cds "$body" > "$output"  ;;
-		*application/x-gzip*)
-		    gzip -cdq "$body" > "$output" ;;
-		*application/gpx+xml*)
-		    cp "$body" "$output" ;;
-		*)
-		    echo "Content-Type $type is not supported."
-		    echo "Please contact osmbtd maintener." ;;
+            case "$type" in
+                *application/x-bzip2*)
+                    bzip2 -cds "$body" > "$output"  ;;
+                *application/x-gzip*)
+                    gzip -cdq "$body" > "$output" ;;
+                *application/gpx+xml*)
+                    cp "$body" "$output" ;;
+                *)
+                    echo "Content-Type $type is not supported."
+                    echo "Please contact osmbtd maintener." ;;
             esac
 
-	    rm "$head" "$body"
+            rm "$head" "$body"
 
-	done
-	_osmbtd $tag $(( page + 1 ))
+        done
+        _osmbtd $tag $(( page + 1 ))
     fi
 }
 
