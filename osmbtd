@@ -45,15 +45,16 @@ _osmbtd ()
 
             curl -s -o "$body" -D "$head" "$OSMBASEURL/trace/$gpxid/data"
 
-            # FIXME: Seems to have strange leading/trailing control character
-            local type="$(grep 'Content-Type:' "$head" | cut -d\  -f2)"
+            local type="$(grep 'Content-Type:' "$head" \
+                         | sed 's/\r//' \
+                         | cut -d\  -f2)"
 
             case "$type" in
-                *application/x-bzip2*)
+                application/x-bzip2)
                     bzip2 -cds "$body" > "$output"  ;;
-                *application/x-gzip*)
+                application/x-gzip)
                     gzip -cdq "$body" > "$output" ;;
-                *application/gpx+xml*)
+                application/gpx+xml)
                     cp "$body" "$output" ;;
                 *)
                     echo "Content-Type $type is not supported."
